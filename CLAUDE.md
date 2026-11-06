@@ -35,10 +35,12 @@ Se usa el wrapper de Maven (`./mvnw`); no hay linter ni formateador configurado.
 | Skill | Ubicación | Qué hace |
 |---|---|---|
 | `greeting` | `.claude/skills/greeting/` | Responde a los saludos con cariño, el día, la fecha, la hora y el clima de Santiago, y un pensamiento célebre motivador |
+| `calculator` | `.claude/skills/calculator/` | Calculadora para números separados por coma: sumar, restar, multiplicar, dividir y promedio |
 
 ## Skills trigger rules
 
 - **`greeting`**: úsalo automáticamente, sin que el usuario lo pida, cada vez que salude. Por ejemplo: "hola", "hola, ¿cómo estás?", "hola, ¿qué tal?", "buen día", "buenos días", "buenas tardes", "buenas noches", "buenas", "qué tal", "hey", "saludos". También cuando el saludo viene junto a una pregunta o tarea: saluda primero, en versión breve, y luego atiende la petición.
+- **`calculator`**: úsalo automáticamente cuando el usuario envíe números separados por coma (por ejemplo "23,56,78" o "10, 4.5, 2"), aunque no diga qué hacer: muestra el menú de operaciones (sumar, restar, multiplicar, dividir, promedio, todas). Si ya indica la operación ("suma 3,5,8", "promedio de 7,8,9"), calcula directamente.
 
 ## Particularidades de Spring Boot 4
 
