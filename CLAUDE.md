@@ -30,6 +30,16 @@ Se usa el wrapper de Maven (`./mvnw`); no hay linter ni formateador configurado.
 - Toda la configuración va en `src/main/resources/application.properties` (no YAML): DevTools, SpringDoc y Actuator (solo `health` e `info` expuestos).
 - Swagger UI en `/swagger-ui.html` y OpenAPI en `/v3/api-docs`. SpringDoc solo escanea `com.andres.course.claude.springboot` (`springdoc.packages-to-scan`), así que los controladores deben estar bajo ese paquete.
 
+## Available skills
+
+| Skill | Ubicación | Qué hace |
+|---|---|---|
+| `greeting` | `.claude/skills/greeting/` | Responde a los saludos con cariño, el día, la fecha, la hora y el clima de Santiago, y un pensamiento célebre motivador |
+
+## Skills trigger rules
+
+- **`greeting`**: úsalo automáticamente, sin que el usuario lo pida, cada vez que salude. Por ejemplo: "hola", "hola, ¿cómo estás?", "hola, ¿qué tal?", "buen día", "buenos días", "buenas tardes", "buenas noches", "buenas", "qué tal", "hey", "saludos". También cuando el saludo viene junto a una pregunta o tarea: saluda primero, en versión breve, y luego atiende la petición.
+
 ## Particularidades de Spring Boot 4
 
 - El starter web se llama `spring-boot-starter-webmvc` (y `spring-boot-starter-webmvc-test` para tests), no `spring-boot-starter-web`.
