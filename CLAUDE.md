@@ -18,6 +18,8 @@ Se usa el wrapper de Maven (`./mvnw`); no hay linter ni formateador configurado.
 ./mvnw test -Dtest=ApplicationTests#contextLoads         # un solo test
 ```
 
+Los tests de controladores usan `@SpringBootTest` + `@AutoConfigureMockMvc`: cargan el contexto completo y simulan el servidor HTTP con MockMvc, sin abrir un puerto. En Boot 4 la anotación está en `org.springframework.boot.webmvc.test.autoconfigure`.
+
 ## Desarrollo con la app en marcha
 
 - Lo habitual es que la app ya esté corriendo desde el IDE en el puerto 8080 con DevTools. Antes de arrancar otra instancia, comprueba si el puerto está ocupado; si lo está, prueba contra esa instancia.
@@ -26,7 +28,7 @@ Se usa el wrapper de Maven (`./mvnw`); no hay linter ni formateador configurado.
 ## Arquitectura
 
 - Paquete raíz y groupId: `com.andres.course.claude.springboot`. Capas en subpaquetes: `controllers`, `services`, `repositories`, `entities`, `models` (DTOs). Los paquetes aún vacíos tienen un `package-info.java` para que Git los conserve; no los borres.
-- `GreetingController` (`GET /api/greetings`) es el endpoint de ejemplo: devuelve un `Map<String, Object>` (no un record/DTO, por decisión del usuario) que Spring serializa a JSON.
+- `IndexController` (`GET /api/v1/greeting`) es el endpoint de ejemplo: devuelve un `Map<String, Object>` (no un record/DTO, por decisión del usuario) que Spring serializa a JSON.
 - Toda la configuración va en `src/main/resources/application.properties` (no YAML): DevTools, SpringDoc y Actuator (solo `health` e `info` expuestos).
 - Swagger UI en `/swagger-ui.html` y OpenAPI en `/v3/api-docs`. SpringDoc solo escanea `com.andres.course.claude.springboot` (`springdoc.packages-to-scan`), así que los controladores deben estar bajo ese paquete.
 

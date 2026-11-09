@@ -8,13 +8,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/greetings")
-public class GreetingController {
+@RequestMapping("/api/v1")
+public class IndexController {
 
-    @GetMapping
+    @GetMapping("/greeting")
     public Map<String, Object> handleGet() {
         return Map.of(
-                "message", "¡Hola Mundo desde Spring Boot! desde un Map. Cualquier cambio que haga se va a actualizar en caliente.",
+                "message",
+                "¡Hola Mundo desde Spring Boot! desde un Map. Cualquier cambio que haga se va a actualizar en caliente.",
                 "date", LocalDateTime.now());
     }
+    
 }

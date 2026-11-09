@@ -53,13 +53,13 @@ Para compilar y ejecutar los tests:
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/api/greetings` | Endpoint de ejemplo que devuelve un saludo y la fecha actual en JSON |
+| `GET` | `/api/v1/greeting` | Endpoint de ejemplo que devuelve un saludo y la fecha actual en JSON |
 | `GET` | `/swagger-ui.html` | Interfaz de Swagger UI para documentar y probar la API |
 | `GET` | `/v3/api-docs` | Especificación OpenAPI en JSON |
 | `GET` | `/actuator/health` | Estado de salud de la aplicación |
 | `GET` | `/actuator/info` | Información de la aplicación |
 
-Ejemplo de respuesta de `GET /api/greetings`:
+Ejemplo de respuesta de `GET /api/v1/greeting`:
 
 ```json
 {
