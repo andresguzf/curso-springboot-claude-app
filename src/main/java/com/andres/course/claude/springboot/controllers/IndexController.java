@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.andres.course.claude.springboot.models.UserDto;
+
 @RestController
 @RequestMapping("/api/v1")
 public class IndexController {
@@ -38,6 +40,16 @@ public class IndexController {
                 "lastname", "Pérez",
                 "email", "juan.perez@ejemplo.com",
                 "age", 30));
+        return body;
+    }
+
+    @GetMapping(value = "/user-dto", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public Map<String, Object> handleGetUserDto() {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("message", "¡Hola Mundo desde Spring Boot! con los datos de un usuario.");
+        body.put("date", LocalDateTime.now());
+        body.put("user", new UserDto("Juan", "Pérez", "juan.perez@ejemplo.com", 30));
         return body;
     }
 
