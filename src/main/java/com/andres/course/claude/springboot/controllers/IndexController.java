@@ -1,6 +1,7 @@
 package com.andres.course.claude.springboot.controllers;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,12 +28,16 @@ public class IndexController {
     @GetMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public Map<String, Object> handleGetUser() {
+        // Map anidado e inmutable: en el JSON queda como un objeto dentro del campo "user"
+
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("message", "¡Hola Mundo desde Spring Boot! con los datos de un usuario.");
         body.put("date", LocalDateTime.now());
-        body.put("name", "Juan");
-        body.put("lastname", "Pérez");
-        body.put("email", "juan.perez@ejemplo.com");
+        body.put("user", Map.of(
+                "name", "Juan",
+                "lastname", "Pérez",
+                "email", "juan.perez@ejemplo.com",
+                "age", 30));
         return body;
     }
 

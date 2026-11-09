@@ -1,5 +1,6 @@
 package com.andres.course.claude.springboot.controllers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -9,12 +10,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.jayway.jsonpath.JsonPath;
 
 // Levanta el contexto completo de Spring y simula el servidor HTTP con MockMvc
 @SpringBootTest
@@ -57,8 +63,22 @@ class IndexControllerTests {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message", containsString("con los datos de un usuario")))
                 .andExpect(jsonPath("$.date", matchesPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*")))
-                .andExpect(jsonPath("$.name").value("Juan"))
-                .andExpect(jsonPath("$.lastname").value("Pérez"))
-                .andExpect(jsonPath("$.email").value("juan.perez@ejemplo.com"));
+                .andExpect(jsonPath("$.user.name").value("Juan"))
+                .andExpect(jsonPath("$.user.lastname").value("Pérez"))
+                .andExpect(jsonPath("$.user.email").value("juan.perez@ejemplo.com"))
+                .andExpect(jsonPath("$.user.age").value(30));
+    }
+
+    @Test
+    void handleGetUserKeepsFieldOrder() throws Exception {
+        String json = mockMvc.perform(get("/api/v1/user"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // JsonPath conserva el orden en que los campos aparecen en el JSON
+        Map<String, Object> body = JsonPath.read(json, "$");
+
+        assertEquals(List.of("message", "date", "user"), List.copyOf(body.keySet()));
     }
 }
