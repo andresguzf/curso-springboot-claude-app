@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -51,6 +52,20 @@ public class IndexController {
                 "¡Hola Mundo desde Spring Boot! con los datos de un usuario.",
                 LocalDateTime.now(),
                 new UserDto("Andrés", "Guzmán", "andres.guzman@example.com", 30));
+    }
+
+    @GetMapping("/user-response-entity")
+    public ResponseEntity<MessageDto> handleGetUserResponseEntity() {
+        MessageDto body = new MessageDto(
+                "¡Hola Mundo desde Spring Boot! con los datos de un usuario.",
+                LocalDateTime.now(),
+                new UserDto("Andrés", "Guzmán", "andres.guzman@example.com", 30));
+
+        // El status y el content type se definen en el código, no con anotaciones
+        return ResponseEntity.status(HttpStatus.OK)
+        // .contentType(MediaType.APPLICATION_XML)
+        // .header("Content-Type", "application/json;charset=UTF-8")
+        .body(body);
     }
 
 }

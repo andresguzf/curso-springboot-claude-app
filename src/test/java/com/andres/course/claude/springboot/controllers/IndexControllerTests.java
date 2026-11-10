@@ -94,4 +94,17 @@ class IndexControllerTests {
                 .andExpect(jsonPath("$.user.email").value("andres.guzman@example.com"))
                 .andExpect(jsonPath("$.user.age").value(30));
     }
+
+    @Test
+    void handleGetUserResponseEntityReturnsUserData() throws Exception {
+        mockMvc.perform(get("/api/v1/user-response-entity"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message", containsString("con los datos de un usuario")))
+                .andExpect(jsonPath("$.date", matchesPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*")))
+                .andExpect(jsonPath("$.user.name").value("Andrés"))
+                .andExpect(jsonPath("$.user.lastname").value("Guzmán"))
+                .andExpect(jsonPath("$.user.email").value("andres.guzman@example.com"))
+                .andExpect(jsonPath("$.user.age").value(30));
+    }
 }
