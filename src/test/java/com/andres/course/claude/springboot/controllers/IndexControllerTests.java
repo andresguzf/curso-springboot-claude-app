@@ -2,6 +2,7 @@ package com.andres.course.claude.springboot.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -213,8 +214,9 @@ class IndexControllerTests {
 
     @Test
     void missingAuthorizationIsBadRequest() throws Exception {
-        mockMvc.perform(get("/api/v1/user-response-entity").header("X-UserName", "andres"))
-                .andExpect(status().isBadRequest());
+        assertBadRequestOnlyFor(HttpHeaders.AUTHORIZATION,
+                mockMvc.perform(get("/api/v1/user-response-entity").header("X-UserName", "andres")))
+                .andExpect(jsonPath("$.errors.Authorization").value("la cabecera es obligatoria"));
     }
 
     // Saludo con el parámetro name del query string
@@ -231,11 +233,11 @@ class IndexControllerTests {
 
     @Test
     void handleGetHelloReturnsXml() throws Exception {
-        mockMvc.perform(get("/api/v1/hello").param("name", "Ana").param("limit", "10").param("page", "0").param("format", "xml"))
+        mockMvc.perform(get("/api/v1/hello").param("name", "Andrea").param("limit", "10").param("page", "0").param("format", "xml"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_XML))
-                .andExpect(xpath("/Map/message").string("¡Hola, Ana! Bienvenido a Spring Boot."))
-                .andExpect(xpath("/Map/name").string("Ana"));
+                .andExpect(xpath("/Map/message").string("¡Hola, Andrea! Bienvenido a Spring Boot."))
+                .andExpect(xpath("/Map/name").string("Andrea"));
     }
 
     @Test
@@ -258,33 +260,58 @@ class IndexControllerTests {
                 .andExpect(status().isOk());
     }
 
-    // Cada fila deja un parámetro inválido; los demás son correctos
+    // Cada fila deja un parámetro inválido y los demás correctos.
+    // El cuerpo del error solo trae ese parámetro con su mensaje, sin la excepción
     @ParameterizedTest
     @CsvSource(value = {
-            "'',    10,  0",   // name vacío
-            "'   ', 10,  0",   // name solo con espacios
-            "Ana,   4,   0",   // limit menor que 5
-            "Ana,   51,  0",   // limit mayor que 50
-            "Ana,   10,  -1",  // page negativo
-            "Ana,   abc, 0",   // limit no numérico
-            "Ana,   10,  abc"  // page no numérico
+            "'',              10,  0,   name",   // name vacío
+            "'   ',           10,  0,   name",   // name solo con espacios
+            "Ana,             10,  0,   name",   // name con menos de 4 letras
+            "Maximiliano Ruiz, 10,  0,   name",  // name con más de 14 letras
+            "Andrea,          4,   0,   limit",  // limit menor que 5
+            "Andrea,          51,  0,   limit",  // limit mayor que 50
+            "Andrea,          10,  -1,  page",   // page negativo
+            "Andrea,          abc, 0,   limit",  // limit no numérico
+            "Andrea,          10,  abc, page"    // page no numérico
     })
-    void invalidHelloParamsAreBadRequest(String name, String limit, String page) throws Exception {
-        mockMvc.perform(get("/api/v1/hello").param("name", name).param("limit", limit).param("page", page))
-                .andExpect(status().isBadRequest());
+    void invalidHelloParamsAreBadRequest(String name, String limit, String page, String field) throws Exception {
+        assertBadRequestOnlyFor(field,
+                mockMvc.perform(get("/api/v1/hello").param("name", name).param("limit", limit).param("page", page)));
+    }
+
+    @Test
+    void nonNumericLimitShowsTypeMessage() throws Exception {
+        mockMvc.perform(get("/api/v1/hello").param("name", "Andrea").param("limit", "abc").param("page", "0"))
+                .andExpect(jsonPath("$.errors.limit").value("debe ser de tipo Integer"));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"name", "limit", "page"})
     void missingHelloParamIsBadRequest(String missing) throws Exception {
-        Map<String, String> params = new HashMap<>(Map.of("name", "Ana", "limit", "10", "page", "0"));
+        Map<String, String> params = new HashMap<>(Map.of("name", "Andrea", "limit", "10", "page", "0"));
         params.remove(missing);
 
         var request = get("/api/v1/hello");
         params.forEach(request::param);
 
-        mockMvc.perform(request)
-                .andExpect(status().isBadRequest());
+        assertBadRequestOnlyFor(missing, mockMvc.perform(request))
+                .andExpect(jsonPath("$.errors." + missing).value("es obligatorio"));
+    }
+
+    // Respuesta de error: status, error y errors, sin la excepción ni la traza
+    private ResultActions assertBadRequestOnlyFor(String field, ResultActions result) throws Exception {
+        String json = result.andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.errors.*", hasSize(1)))
+                .andExpect(jsonPath("$.errors." + field).isNotEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Map<String, Object> body = JsonPath.read(json, "$");
+        assertEquals(List.of("status", "error", "errors"), List.copyOf(body.keySet()));
+        return result;
     }
 
     private void assertJsonResponse(ResultActions result) throws Exception {
