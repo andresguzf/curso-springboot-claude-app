@@ -29,7 +29,7 @@ public class IndexController {
         return body;
     }
 
-    @GetMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/user", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     @ResponseStatus(HttpStatus.OK)
     public Map<String, Object> handleGetUser() {
         // Map anidado e inmutable: en el JSON queda como un objeto dentro del campo "user"
@@ -45,7 +45,7 @@ public class IndexController {
         return body;
     }
 
-    @GetMapping(value = "/user-dto", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/user-dto", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     @ResponseStatus(HttpStatus.OK)
     public MessageDto handleGetUserDto() {
         return new MessageDto(
