@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +22,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import com.andres.course.claude.springboot.models.MessageDto;
@@ -100,6 +103,18 @@ public class IndexController {
         body.put("page", page);
         body.put("date", LocalDateTime.now());
         return body;
+    }
+
+    // Path variable: el id viene en la ruta, por ejemplo /api/v1/products/7
+    @GetMapping("/products/{id}")
+    public Map<String, Object> findById(@PathVariable @Min(1) @Max(45) Long id) {
+        return Map.of("productId", id);
+    }
+
+    // Parte estática "code" + parte variable {code}, por ejemplo /api/v1/code/ABC123
+    @GetMapping("/code/{code}")
+    public Map<String, Object> findByCode(@PathVariable @Size(min = 3, max = 10) String code) {
+        return Map.of("productCode", code);
     }
 
 }

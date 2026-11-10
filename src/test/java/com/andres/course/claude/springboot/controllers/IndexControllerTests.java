@@ -298,6 +298,55 @@ class IndexControllerTests {
                 .andExpect(jsonPath("$.errors." + missing).value("es obligatorio"));
     }
 
+    // Producto por id con path variable
+
+    @Test
+    void findByIdReturnsProductId() throws Exception {
+        mockMvc.perform(get("/api/v1/products/{id}", 7))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.productId").value(7));
+    }
+
+    @Test
+    void findByIdWithNonNumericIdIsBadRequest() throws Exception {
+        assertBadRequestOnlyFor("id", mockMvc.perform(get("/api/v1/products/{id}", "abc")))
+                .andExpect(jsonPath("$.errors.id").value("debe ser de tipo Long"));
+    }
+
+    // id válido: entre 1 y 45
+    @ParameterizedTest
+    @ValueSource(longs = {1, 45})
+    void findByIdAcceptsIdsInRange(long id) throws Exception {
+        mockMvc.perform(get("/api/v1/products/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productId").value(id));
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, 46})
+    void findByIdOutOfRangeIsBadRequest(long id) throws Exception {
+        assertBadRequestOnlyFor("id", mockMvc.perform(get("/api/v1/products/{id}", id)));
+    }
+
+    // Producto por código: parte estática "code" + path variable
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ABC", "ABC123", "ABCDEFGHIJ"})
+    void findByCodeReturnsProductCode(String code) throws Exception {
+        mockMvc.perform(get("/api/v1/code/{code}", code))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.productCode").value(code));
+    }
+
+    // Menos de 3 o más de 10 caracteres
+    @ParameterizedTest
+    @ValueSource(strings = {"AB", "ABCDEFGHIJK"})
+    void findByCodeWithInvalidLengthIsBadRequest(String code) throws Exception {
+        assertBadRequestOnlyFor("code", mockMvc.perform(get("/api/v1/code/{code}", code)));
+    }
+
     // Respuesta de error: status, error y errors, sin la excepción ni la traza
     private ResultActions assertBadRequestOnlyFor(String field, ResultActions result) throws Exception {
         String json = result.andExpect(status().isBadRequest())
