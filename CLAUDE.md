@@ -27,8 +27,9 @@ Los tests de controladores usan `@SpringBootTest` + `@AutoConfigureMockMvc`: car
 
 ## Arquitectura
 
-- Paquete raíz y groupId: `com.andres.course.claude.springboot`. Capas en subpaquetes: `controllers`, `services`, `repositories`, `entities`, `models` (DTOs). Los paquetes aún vacíos tienen un `package-info.java` para que Git los conserve; no los borres.
+- Paquete raíz y groupId: `com.andres.course.claude.springboot`. Capas en subpaquetes: `controllers`, `services`, `repositories`, `entities`, `models` (DTOs), `exceptions`. Los paquetes aún vacíos tienen un `package-info.java` para que Git los conserve; no los borres.
 - `IndexController` (`GET /api/v1/greeting`) es el endpoint de ejemplo: devuelve un `Map<String, Object>` (no un record/DTO, por decisión del usuario) que Spring serializa a JSON.
+- Los errores no van en los controladores: `exceptions/GlobalExceptionHandler` (`@RestControllerAdvice`) responde 400 con `status`, `error` y `errors` (campo o parámetro → mensaje), sin la excepción. Los parámetros se validan con anotaciones de `spring-boot-starter-validation` directamente en el handler, sin `@Validated`.
 - Toda la configuración va en `src/main/resources/application.properties` (no YAML): DevTools, SpringDoc y Actuator (solo `health` e `info` expuestos).
 - Swagger UI en `/swagger-ui.html` y OpenAPI en `/v3/api-docs`. SpringDoc solo escanea `com.andres.course.claude.springboot` (`springdoc.packages-to-scan`), así que los controladores deben estar bajo ese paquete.
 
