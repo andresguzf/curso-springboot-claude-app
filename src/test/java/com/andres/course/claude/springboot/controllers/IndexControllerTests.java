@@ -347,6 +347,47 @@ class IndexControllerTests {
         assertBadRequestOnlyFor("code", mockMvc.perform(get("/api/v1/code/{code}", code)));
     }
 
+    // Saludo con dos path variables: name y age
+
+    @Test
+    void handleGetHelloPathReturnsNameAndAge() throws Exception {
+        mockMvc.perform(get("/api/v1/hello/{name}/{age}", "Andrés", 30))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value("¡Hola, Andrés! Tienes 30 años."))
+                .andExpect(jsonPath("$.name").value("Andrés"))
+                .andExpect(jsonPath("$.age").value(30));
+    }
+
+    // Límites válidos: name de 3 a 18 caracteres, age de 1 a 110
+    @ParameterizedTest
+    @CsvSource({"Ana, 1", "Andrés, 30", "Maximiliano Rodrig, 110"})
+    void handleGetHelloPathAcceptsValuesInRange(String name, int age) throws Exception {
+        mockMvc.perform(get("/api/v1/hello/{name}/{age}", name, age))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value(name))
+                .andExpect(jsonPath("$.age").value(age));
+    }
+
+    // Cada fila deja un valor inválido; el error solo trae ese campo
+    @ParameterizedTest
+    @CsvSource({
+            "Al,                  30,  name", // name con menos de 3 caracteres
+            "Maximiliano Rodrigo, 30,  name", // name con más de 18 caracteres
+            "'    ',              30,  name", // name solo con espacios
+            "Andrés,              0,   age",  // age menor que 1
+            "Andrés,              111, age"   // age mayor que 110
+    })
+    void handleGetHelloPathWithInvalidValuesIsBadRequest(String name, int age, String field) throws Exception {
+        assertBadRequestOnlyFor(field, mockMvc.perform(get("/api/v1/hello/{name}/{age}", name, age)));
+    }
+
+    @Test
+    void handleGetHelloPathWithNonNumericAgeIsBadRequest() throws Exception {
+        assertBadRequestOnlyFor("age", mockMvc.perform(get("/api/v1/hello/{name}/{age}", "Andrés", "treinta")))
+                .andExpect(jsonPath("$.errors.age").value("debe ser de tipo Integer"));
+    }
+
     // Respuesta de error: status, error y errors, sin la excepción ni la traza
     private ResultActions assertBadRequestOnlyFor(String field, ResultActions result) throws Exception {
         String json = result.andExpect(status().isBadRequest())

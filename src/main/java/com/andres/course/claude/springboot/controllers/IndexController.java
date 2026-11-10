@@ -117,4 +117,17 @@ public class IndexController {
         return Map.of("productCode", code);
     }
 
+    // Dos path variables en la misma ruta, por ejemplo /api/v1/hello/Andrés/30
+    // name: de 3 a 18 caracteres, sin ser solo espacios. age: entre 1 y 110
+    @GetMapping("/hello/{name}/{age}")
+    public Map<String, Object> handleGetHelloPath(
+            @PathVariable @NotBlank @Size(min = 3, max = 18) String name,
+            @PathVariable @Min(1) @Max(110) Integer age) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("message", "¡Hola, %s! Tienes %d años.".formatted(name, age));
+        body.put("name", name);
+        body.put("age", age);
+        return body;
+    }
+
 }
