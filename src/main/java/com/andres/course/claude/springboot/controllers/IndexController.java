@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -65,6 +66,9 @@ public class IndexController {
         return ResponseEntity.status(HttpStatus.OK)
         // .contentType(MediaType.APPLICATION_XML)
         // .header("Content-Type", "application/json;charset=UTF-8")
+        .header("X-Color", "#%06X".formatted(ThreadLocalRandom.current().nextInt(0x1000000)))
+        // Token de ejemplo público de jwt.io, no es una credencial real
+        .header("X-Token", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
         .body(body);
     }
 

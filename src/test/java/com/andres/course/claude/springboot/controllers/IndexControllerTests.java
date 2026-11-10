@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
@@ -174,6 +175,15 @@ class IndexControllerTests {
                 .andExpect(xpath("/MessageDto/user/lastname").string("Guzmán"))
                 .andExpect(xpath("/MessageDto/user/email").string("andres.guzman@example.com"))
                 .andExpect(xpath("/MessageDto/user/age").string("30"));
+    }
+
+    @Test
+    void handleGetUserResponseEntityReturnsCustomHeaders() throws Exception {
+        mockMvc.perform(get("/api/v1/user-response-entity"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Color", matchesPattern("#[0-9A-F]{6}")))
+                // Un JWT tiene tres partes separadas por punto: header.payload.firma
+                .andExpect(header().string("X-Token", matchesPattern("Bearer [\\w-]+\\.[\\w-]+\\.[\\w-]+")));
     }
 
     private void assertJsonResponse(ResultActions result) throws Exception {
