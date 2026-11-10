@@ -89,9 +89,9 @@ class IndexControllerTests {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message", containsString("con los datos de un usuario")))
                 .andExpect(jsonPath("$.date", matchesPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*")))
-                .andExpect(jsonPath("$.user.name").value("Juan"))
-                .andExpect(jsonPath("$.user.lastname").value("Pérez"))
-                .andExpect(jsonPath("$.user.email").value("juan.perez@ejemplo.com"))
+                .andExpect(jsonPath("$.user.name").value("Andrés"))
+                .andExpect(jsonPath("$.user.lastname").value("Guzmán"))
+                .andExpect(jsonPath("$.user.email").value("andres.guzman@example.com"))
                 .andExpect(jsonPath("$.user.age").value(30));
     }
 }
