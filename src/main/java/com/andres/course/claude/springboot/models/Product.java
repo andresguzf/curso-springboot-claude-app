@@ -13,7 +13,7 @@ import jakarta.validation.constraints.Size;
 // Producto que llega en el cuerpo (body) de un POST como JSON.
 // El id no lo envía el cliente: el servidor genera un UUID al crear el producto.
 // Validaciones (se aplican con @Valid en el controlador):
-// - name: obligatorio, de 4 a 12 caracteres
+// - name: obligatorio, de 4 a 40 caracteres
 // - price: obligatorio, mayor que 2, con hasta 10 dígitos enteros y 6 decimales (BigDecimal no pierde precisión)
 // - quantity: obligatoria y mayor que 1
 public record Product(

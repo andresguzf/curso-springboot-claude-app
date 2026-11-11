@@ -155,4 +155,13 @@ public class IndexController {
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
+    // POST: el usuario llega como JSON en el cuerpo y @Valid aplica las validaciones de UserDto.
+    // La respuesta reutiliza MessageDto: mensaje, fecha y el usuario creado
+    @PostMapping("/users")
+    public ResponseEntity<MessageDto> createUser(@Valid @RequestBody UserDto user) {
+        log.info("Usuario recibido: {}", user);
+        MessageDto body = new MessageDto("Usuario creado con éxito", LocalDateTime.now(), user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+
 }

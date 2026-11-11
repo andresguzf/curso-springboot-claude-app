@@ -516,9 +516,9 @@ class IndexControllerTests {
                 "Producto recibido: {\"id\":null,\"name\":\"Audífonos\",\"price\":49990.99,\"quantity\":4}"));
     }
 
-    // Valores en el límite que se aceptan: name de 4 y 12 caracteres, price apenas mayor que 2, quantity 2
+    // Valores en el límite que se aceptan: name de 4 y 40 caracteres, price apenas mayor que 2, quantity 2
     @ParameterizedTest
-    @CsvSource({"Lupa, 2.01, 2", "Destornillad, 2.000001, 2"})
+    @CsvSource({"Lupa, 2.01, 2", "Destornillador eléctrico inalámbrico 18V, 2.000001, 2"})
     void createAcceptsProductInRange(String name, String price, int quantity) throws Exception {
         mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -537,7 +537,7 @@ class IndexControllerTests {
             {"name": null, "price": 10, "quantity": 3}                    | name
             {"name": "    ", "price": 10, "quantity": 3}                  | name
             {"name": "Ana", "price": 10, "quantity": 3}                   | name
-            {"name": "Destornillado", "price": 10, "quantity": 3}         | name
+            {"name": "Destornillador eléctrico inalámbrico 18VX", "price": 10, "quantity": 3} | name
             {"name": "Teclado", "quantity": 3}                            | price
             {"name": "Teclado", "price": null, "quantity": 3}             | price
             {"name": "Teclado", "price": 2, "quantity": 3}                | price
@@ -555,10 +555,103 @@ class IndexControllerTests {
 
     @Test
     void createWithMalformedJsonIsBadRequest() throws Exception {
-        mockMvc.perform(post("/api/products")
+        assertBadRequestOnlyFor("body", mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\": \"Teclado\", "))
-                .andExpect(status().isBadRequest());
+                .content("{\"name\": \"Teclado\", ")))
+                .andExpect(jsonPath("$.errors.body").value("el cuerpo del request no es un JSON válido"));
+    }
+
+    // POST de un usuario con UserDto en el cuerpo del request
+
+    @Test
+    void createUserReturnsCreatedUser() throws Exception {
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "María", "lastname": "González", "email": "maria.gonzalez@ejemplo.com", "age": 28}
+                        """))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value("Usuario creado con éxito"))
+                .andExpect(jsonPath("$.date", matchesPattern(ISO_DATE)))
+                .andExpect(jsonPath("$.user.name").value("María"))
+                .andExpect(jsonPath("$.user.lastname").value("González"))
+                .andExpect(jsonPath("$.user.email").value("maria.gonzalez@ejemplo.com"))
+                .andExpect(jsonPath("$.user.age").value(28));
+    }
+
+    // Valores en el límite que se aceptan: name y lastname de 3 y 20 caracteres
+    @ParameterizedTest
+    @CsvSource({"Ana, Paz", "Maximiliano Andrés J, Fernández de la Riva"})
+    void createUserAcceptsNamesInRange(String name, String lastname) throws Exception {
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "%s", "lastname": "%s", "email": "test@ejemplo.com", "age": 30}
+                        """.formatted(name, lastname)))
+                .andExpect(status().isCreated());
+    }
+
+    // Cada fila envía un usuario con un solo campo inválido: el error solo trae ese campo
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', textBlock = """
+            {"lastname": "Pérez", "email": "test@ejemplo.com", "age": 30}                              | name
+            {"name": "   ", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30}               | name
+            {"name": "Al", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30}                | name
+            {"name": "Maximiliano Andrés Jo", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30} | name
+            {"name": "Juan", "email": "test@ejemplo.com", "age": 30}                                    | lastname
+            {"name": "Juan", "lastname": "", "email": "test@ejemplo.com", "age": 30}                    | lastname
+            {"name": "Juan", "lastname": "Li", "email": "test@ejemplo.com", "age": 30}                  | lastname
+            {"name": "Juan", "lastname": "Fernández de la Rivas", "email": "test@ejemplo.com", "age": 30} | lastname
+            {"name": "Juan", "lastname": "Pérez", "age": 30}                                            | email
+            {"name": "Juan", "lastname": "Pérez", "email": "", "age": 30}                               | email
+            {"name": "Juan", "lastname": "Pérez", "email": "juan.perez", "age": 30}                     | email
+            {"name": "Juan", "lastname": "Pérez", "email": "juan@@ejemplo.com", "age": 30}              | email
+            {"name": "Juan", "lastname": "Pérez", "email": "@ejemplo.com", "age": 30}                   | email
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com"}                          | age
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": null}             | age
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 0}                | age
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 111}              | age
+            """)
+    void createUserWithInvalidDataIsBadRequest(String json, String field) throws Exception {
+        assertBadRequestOnlyFor(field, mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)));
+    }
+
+    // JSON vacío: llega a la validación y muestra todos los campos obligatorios, no un error de lectura
+    @Test
+    void createUserWithEmptyJsonShowsFieldErrors() throws Exception {
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.*", hasSize(4)))
+                .andExpect(jsonPath("$.errors.name").isNotEmpty())
+                .andExpect(jsonPath("$.errors.lastname").isNotEmpty())
+                .andExpect(jsonPath("$.errors.email").isNotEmpty())
+                .andExpect(jsonPath("$.errors.age").isNotEmpty())
+                .andExpect(jsonPath("$.trace").doesNotExist());
+    }
+
+    // Edades en el límite que se aceptan: 1 y 110
+    @ParameterizedTest
+    @ValueSource(ints = {1, 110})
+    void createUserAcceptsAgeInRange(int age) throws Exception {
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Juan", "lastname": "Pérez", "email": "juan.perez@ejemplo.com", "age": %d}
+                        """.formatted(age)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.age").value(age));
+    }
+
+    @Test
+    void createUserWithMalformedJsonIsBadRequest() throws Exception {
+        assertBadRequestOnlyFor("body", mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\": ")));
     }
 
     // Respuesta de error: status, error y errors, sin la excepción ni la traza

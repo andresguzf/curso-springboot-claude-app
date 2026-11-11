@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -39,6 +40,12 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getFieldErrors().forEach(error ->
                 errors.merge(error.getField(), error.getDefaultMessage(), (a, b) -> a + ", " + b));
         return badRequest(errors);
+    }
+
+    // El cuerpo del request no se puede leer: JSON mal formado, vacío o con un tipo incorrecto
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        return badRequest(Map.of("body", "el cuerpo del request no es un JSON válido"));
     }
 
     // Falta un parámetro obligatorio del query string
