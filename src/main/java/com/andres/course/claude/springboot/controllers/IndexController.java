@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -36,8 +39,11 @@ import com.andres.course.claude.springboot.models.ProductResponseDto;
 import com.andres.course.claude.springboot.models.UserDto;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api")
 public class IndexController {
+
+    // Logger de la clase: los mensajes salen en la consola junto al nombre del controlador
+    private static final Logger log = LoggerFactory.getLogger(IndexController.class);
 
     @GetMapping("/greeting")
     public Map<String, Object> handleGet() {
@@ -94,7 +100,7 @@ public class IndexController {
         .body(body);
     }
 
-    // Parámetros del query string: /api/v1/hello?name=Andrés&limit=5&page=2
+    // Parámetros del query string: /api/hello?name=Andrés&limit=5&page=2
     // Los tres son obligatorios. Si falta uno, no es número o no cumple la validación, responde 400
     @GetMapping("/hello")
     public Map<String, Object> handleGetHello(
@@ -110,19 +116,19 @@ public class IndexController {
         return body;
     }
 
-    // Path variable: el id viene en la ruta, por ejemplo /api/v1/products/7
+    // Path variable: el id viene en la ruta, por ejemplo /api/products/7
     @GetMapping("/products/{id}")
     public Map<String, Object> findById(@PathVariable @Min(1) @Max(45) Long id) {
         return Map.of("productId", id);
     }
 
-    // Parte estática "code" + parte variable {code}, por ejemplo /api/v1/code/ABC123
+    // Parte estática "code" + parte variable {code}, por ejemplo /api/code/ABC123
     @GetMapping("/code/{code}")
     public Map<String, Object> findByCode(@PathVariable @Size(min = 3, max = 10) String code) {
         return Map.of("productCode", code);
     }
 
-    // Dos path variables en la misma ruta, por ejemplo /api/v1/hello/Andrés/30
+    // Dos path variables en la misma ruta, por ejemplo /api/hello/Andrés/30
     // name: de 3 a 18 caracteres, sin ser solo espacios. age: entre 1 y 110
     @GetMapping("/hello/{name}/{age}")
     public Map<String, Object> handleGetHelloPath(
@@ -137,8 +143,12 @@ public class IndexController {
 
     // POST: el producto llega como JSON en el cuerpo del request y Spring lo convierte a Product
     // Responde con ResponseEntity: el status 201 se define en el código y el cuerpo es un DTO
+    // @Valid aplica las validaciones del record Product, como @Digits en price
     @PostMapping("/products")
-    public ResponseEntity<ProductResponseDto> create(@RequestBody Product product) {
+    public ResponseEntity<ProductResponseDto> create(@Valid @RequestBody Product product) {
+        // {} se reemplaza por el toString() de Product, que devuelve el producto en formato JSON
+        log.info("Producto recibido: {}", product);
+
         // El id es un UUID aleatorio generado en el servidor; se ignora el que pudiera enviar el cliente
         Product created = new Product(UUID.randomUUID(), product.name(), product.price(), product.quantity());
         ProductResponseDto body = new ProductResponseDto("Producto creado con éxito", created);

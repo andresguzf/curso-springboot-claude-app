@@ -20,11 +20,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -51,33 +54,33 @@ class IndexControllerTests {
 
     @Test
     void handleGetReturnsJson() throws Exception {
-        mockMvc.perform(get("/api/v1/greeting"))
+        mockMvc.perform(get("/api/greeting"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     @Test
     void handleGetReturnsMessage() throws Exception {
-        mockMvc.perform(get("/api/v1/greeting"))
+        mockMvc.perform(get("/api/greeting"))
                 .andExpect(jsonPath("$.message")
                 .value("¡Hola Mundo desde Spring Boot! desde un Map. Cualquier cambio que haga se va a actualizar en caliente."));
     }
 
     @Test
     void handleGetReturnsDateInIsoFormat() throws Exception {
-        mockMvc.perform(get("/api/v1/greeting"))
+        mockMvc.perform(get("/api/greeting"))
                 .andExpect(jsonPath("$.date", matchesPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*")));
     }
 
     @Test
     void postIsNotAllowed() throws Exception {
-        mockMvc.perform(post("/api/v1/greeting"))
+        mockMvc.perform(post("/api/greeting"))
                 .andExpect(status().isMethodNotAllowed());
     }
 
     @Test
     void handleGetUserReturnsUserData() throws Exception {
-        mockMvc.perform(get("/api/v1/user"))
+        mockMvc.perform(get("/api/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message", containsString("con los datos de un usuario")))
@@ -90,7 +93,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetUserKeepsFieldOrder() throws Exception {
-        String json = mockMvc.perform(get("/api/v1/user"))
+        String json = mockMvc.perform(get("/api/user"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -103,7 +106,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetUserDtoReturnsUserData() throws Exception {
-        mockMvc.perform(get("/api/v1/user-dto"))
+        mockMvc.perform(get("/api/user-dto"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message", containsString("con los datos de un usuario")))
@@ -116,7 +119,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetUserResponseEntityReturnsUserData() throws Exception {
-        mockMvc.perform(get("/api/v1/user-response-entity").header(HttpHeaders.AUTHORIZATION, TOKEN))
+        mockMvc.perform(get("/api/user-response-entity").header(HttpHeaders.AUTHORIZATION, TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message", containsString("con los datos de un usuario")))
@@ -130,40 +133,40 @@ class IndexControllerTests {
     // Formato elegido con el parámetro de la URL: ?format=json o ?format=xml
 
     @ParameterizedTest
-    @ValueSource(strings = {"/api/v1/greeting", "/api/v1/user", "/api/v1/user-dto", "/api/v1/user-response-entity"})
+    @ValueSource(strings = {"/api/greeting", "/api/user", "/api/user-dto", "/api/user-response-entity"})
     void formatJsonReturnsJson(String path) throws Exception {
         assertJsonResponse(mockMvc.perform(get(path).param("format", "json").header(HttpHeaders.AUTHORIZATION, TOKEN)));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/api/v1/greeting", "/api/v1/user", "/api/v1/user-dto", "/api/v1/user-response-entity"})
+    @ValueSource(strings = {"/api/greeting", "/api/user", "/api/user-dto", "/api/user-response-entity"})
     void formatXmlReturnsXml(String path) throws Exception {
         assertXmlResponse(mockMvc.perform(get(path).param("format", "xml").header(HttpHeaders.AUTHORIZATION, TOKEN)));
     }
 
     @Test
     void unknownFormatIsNotAcceptable() throws Exception {
-        mockMvc.perform(get("/api/v1/greeting").param("format", "yaml"))
+        mockMvc.perform(get("/api/greeting").param("format", "yaml"))
                 .andExpect(status().isNotAcceptable());
     }
 
     // Formato elegido con la cabecera Accept de la petición
 
     @ParameterizedTest
-    @ValueSource(strings = {"/api/v1/greeting", "/api/v1/user", "/api/v1/user-dto", "/api/v1/user-response-entity"})
+    @ValueSource(strings = {"/api/greeting", "/api/user", "/api/user-dto", "/api/user-response-entity"})
     void acceptJsonReturnsJson(String path) throws Exception {
         assertJsonResponse(mockMvc.perform(get(path).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, TOKEN)));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/api/v1/greeting", "/api/v1/user", "/api/v1/user-dto", "/api/v1/user-response-entity"})
+    @ValueSource(strings = {"/api/greeting", "/api/user", "/api/user-dto", "/api/user-response-entity"})
     void acceptXmlReturnsXml(String path) throws Exception {
         assertXmlResponse(mockMvc.perform(get(path).accept(MediaType.APPLICATION_XML).header(HttpHeaders.AUTHORIZATION, TOKEN)));
     }
 
     @Test
     void formatParameterTakesPrecedenceOverAcceptHeader() throws Exception {
-        assertJsonResponse(mockMvc.perform(get("/api/v1/greeting")
+        assertJsonResponse(mockMvc.perform(get("/api/greeting")
                 .param("format", "json")
                 .accept(MediaType.APPLICATION_XML)));
     }
@@ -172,7 +175,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetUserReturnsUserDataInXml() throws Exception {
-        mockMvc.perform(get("/api/v1/user").param("format", "xml"))
+        mockMvc.perform(get("/api/user").param("format", "xml"))
                 .andExpect(xpath("/Map/user/name").string("Juan"))
                 .andExpect(xpath("/Map/user/lastname").string("Pérez"))
                 .andExpect(xpath("/Map/user/email").string("juan.perez@ejemplo.com"))
@@ -180,7 +183,7 @@ class IndexControllerTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/api/v1/user-dto", "/api/v1/user-response-entity"})
+    @ValueSource(strings = {"/api/user-dto", "/api/user-response-entity"})
     void messageDtoReturnsUserDataInXml(String path) throws Exception {
         mockMvc.perform(get(path).param("format", "xml").header(HttpHeaders.AUTHORIZATION, TOKEN))
                 .andExpect(xpath("/*/user/name").string("Andrés"))
@@ -191,7 +194,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetUserResponseEntityReturnsCustomHeaders() throws Exception {
-        mockMvc.perform(get("/api/v1/user-response-entity").header(HttpHeaders.AUTHORIZATION, TOKEN))
+        mockMvc.perform(get("/api/user-response-entity").header(HttpHeaders.AUTHORIZATION, TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Color", matchesPattern("#[0-9A-F]{6}")))
                 // Un JWT tiene tres partes separadas por punto: header.payload.firma
@@ -202,7 +205,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetUserResponseEntityReturnsRequestHeaders() throws Exception {
-        mockMvc.perform(get("/api/v1/user-response-entity")
+        mockMvc.perform(get("/api/user-response-entity")
                 .header("X-UserName", "andres")
                 .header(HttpHeaders.AUTHORIZATION, TOKEN))
                 .andExpect(status().isOk())
@@ -212,7 +215,7 @@ class IndexControllerTests {
 
     @Test
     void missingUserNameUsesDefaultValue() throws Exception {
-        mockMvc.perform(get("/api/v1/user-response-entity").header(HttpHeaders.AUTHORIZATION, TOKEN))
+        mockMvc.perform(get("/api/user-response-entity").header(HttpHeaders.AUTHORIZATION, TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("Anonymous"));
     }
@@ -220,7 +223,7 @@ class IndexControllerTests {
     @Test
     void missingAuthorizationIsBadRequest() throws Exception {
         assertBadRequestOnlyFor(HttpHeaders.AUTHORIZATION,
-                mockMvc.perform(get("/api/v1/user-response-entity").header("X-UserName", "andres")))
+                mockMvc.perform(get("/api/user-response-entity").header("X-UserName", "andres")))
                 .andExpect(jsonPath("$.errors.Authorization").value("la cabecera es obligatoria"));
     }
 
@@ -228,7 +231,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetHelloGreetsByName() throws Exception {
-        mockMvc.perform(get("/api/v1/hello").param("name", "Andrés").param("limit", "10").param("page", "0"))
+        mockMvc.perform(get("/api/hello").param("name", "Andrés").param("limit", "10").param("page", "0"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value("¡Hola, Andrés! Bienvenido a Spring Boot."))
@@ -238,7 +241,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetHelloReturnsXml() throws Exception {
-        mockMvc.perform(get("/api/v1/hello").param("name", "Andrea").param("limit", "10").param("page", "0").param("format", "xml"))
+        mockMvc.perform(get("/api/hello").param("name", "Andrea").param("limit", "10").param("page", "0").param("format", "xml"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_XML))
                 .andExpect(xpath("/Map/message").string("¡Hola, Andrea! Bienvenido a Spring Boot."))
@@ -247,7 +250,7 @@ class IndexControllerTests {
 
     @Test
     void handleGetHelloReturnsLimitAndPage() throws Exception {
-        mockMvc.perform(get("/api/v1/hello")
+        mockMvc.perform(get("/api/hello")
                 .param("name", "Andrés")
                 .param("limit", "5")
                 .param("page", "2"))
@@ -261,7 +264,7 @@ class IndexControllerTests {
     @ParameterizedTest
     @CsvSource({"5, 0", "50, 0", "20, 100"})
     void handleGetHelloAcceptsLimitsInRange(String limit, String page) throws Exception {
-        mockMvc.perform(get("/api/v1/hello").param("name", "Andrés").param("limit", limit).param("page", page))
+        mockMvc.perform(get("/api/hello").param("name", "Andrés").param("limit", limit).param("page", page))
                 .andExpect(status().isOk());
     }
 
@@ -281,12 +284,12 @@ class IndexControllerTests {
     })
     void invalidHelloParamsAreBadRequest(String name, String limit, String page, String field) throws Exception {
         assertBadRequestOnlyFor(field,
-                mockMvc.perform(get("/api/v1/hello").param("name", name).param("limit", limit).param("page", page)));
+                mockMvc.perform(get("/api/hello").param("name", name).param("limit", limit).param("page", page)));
     }
 
     @Test
     void nonNumericLimitShowsTypeMessage() throws Exception {
-        mockMvc.perform(get("/api/v1/hello").param("name", "Andrea").param("limit", "abc").param("page", "0"))
+        mockMvc.perform(get("/api/hello").param("name", "Andrea").param("limit", "abc").param("page", "0"))
                 .andExpect(jsonPath("$.errors.limit").value("debe ser de tipo Integer"));
     }
 
@@ -296,7 +299,7 @@ class IndexControllerTests {
         Map<String, String> params = new HashMap<>(Map.of("name", "Andrea", "limit", "10", "page", "0"));
         params.remove(missing);
 
-        var request = get("/api/v1/hello");
+        var request = get("/api/hello");
         params.forEach(request::param);
 
         assertBadRequestOnlyFor(missing, mockMvc.perform(request))
@@ -307,7 +310,7 @@ class IndexControllerTests {
 
     @Test
     void findByIdReturnsProductId() throws Exception {
-        mockMvc.perform(get("/api/v1/products/{id}", 7))
+        mockMvc.perform(get("/api/products/{id}", 7))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.productId").value(7));
@@ -315,7 +318,7 @@ class IndexControllerTests {
 
     @Test
     void findByIdWithNonNumericIdIsBadRequest() throws Exception {
-        assertBadRequestOnlyFor("id", mockMvc.perform(get("/api/v1/products/{id}", "abc")))
+        assertBadRequestOnlyFor("id", mockMvc.perform(get("/api/products/{id}", "abc")))
                 .andExpect(jsonPath("$.errors.id").value("debe ser de tipo Long"));
     }
 
@@ -323,7 +326,7 @@ class IndexControllerTests {
     @ParameterizedTest
     @ValueSource(longs = {1, 45})
     void findByIdAcceptsIdsInRange(long id) throws Exception {
-        mockMvc.perform(get("/api/v1/products/{id}", id))
+        mockMvc.perform(get("/api/products/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.productId").value(id));
     }
@@ -331,7 +334,7 @@ class IndexControllerTests {
     @ParameterizedTest
     @ValueSource(longs = {0, 46})
     void findByIdOutOfRangeIsBadRequest(long id) throws Exception {
-        assertBadRequestOnlyFor("id", mockMvc.perform(get("/api/v1/products/{id}", id)));
+        assertBadRequestOnlyFor("id", mockMvc.perform(get("/api/products/{id}", id)));
     }
 
     // Producto por código: parte estática "code" + path variable
@@ -339,7 +342,7 @@ class IndexControllerTests {
     @ParameterizedTest
     @ValueSource(strings = {"ABC", "ABC123", "ABCDEFGHIJ"})
     void findByCodeReturnsProductCode(String code) throws Exception {
-        mockMvc.perform(get("/api/v1/code/{code}", code))
+        mockMvc.perform(get("/api/code/{code}", code))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.productCode").value(code));
@@ -349,14 +352,14 @@ class IndexControllerTests {
     @ParameterizedTest
     @ValueSource(strings = {"AB", "ABCDEFGHIJK"})
     void findByCodeWithInvalidLengthIsBadRequest(String code) throws Exception {
-        assertBadRequestOnlyFor("code", mockMvc.perform(get("/api/v1/code/{code}", code)));
+        assertBadRequestOnlyFor("code", mockMvc.perform(get("/api/code/{code}", code)));
     }
 
     // Saludo con dos path variables: name y age
 
     @Test
     void handleGetHelloPathReturnsNameAndAge() throws Exception {
-        mockMvc.perform(get("/api/v1/hello/{name}/{age}", "Andrés", 30))
+        mockMvc.perform(get("/api/hello/{name}/{age}", "Andrés", 30))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value("¡Hola, Andrés! Tienes 30 años."))
@@ -368,7 +371,7 @@ class IndexControllerTests {
     @ParameterizedTest
     @CsvSource({"Ana, 1", "Andrés, 30", "Maximiliano Rodrig, 110"})
     void handleGetHelloPathAcceptsValuesInRange(String name, int age) throws Exception {
-        mockMvc.perform(get("/api/v1/hello/{name}/{age}", name, age))
+        mockMvc.perform(get("/api/hello/{name}/{age}", name, age))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(name))
                 .andExpect(jsonPath("$.age").value(age));
@@ -384,12 +387,12 @@ class IndexControllerTests {
             "Andrés,              111, age"   // age mayor que 110
     })
     void handleGetHelloPathWithInvalidValuesIsBadRequest(String name, int age, String field) throws Exception {
-        assertBadRequestOnlyFor(field, mockMvc.perform(get("/api/v1/hello/{name}/{age}", name, age)));
+        assertBadRequestOnlyFor(field, mockMvc.perform(get("/api/hello/{name}/{age}", name, age)));
     }
 
     @Test
     void handleGetHelloPathWithNonNumericAgeIsBadRequest() throws Exception {
-        assertBadRequestOnlyFor("age", mockMvc.perform(get("/api/v1/hello/{name}/{age}", "Andrés", "treinta")))
+        assertBadRequestOnlyFor("age", mockMvc.perform(get("/api/hello/{name}/{age}", "Andrés", "treinta")))
                 .andExpect(jsonPath("$.errors.age").value("debe ser de tipo Integer"));
     }
 
@@ -401,7 +404,7 @@ class IndexControllerTests {
                 {"name": "Teclado", "price": 29990.5, "quantity": 3}
                 """;
 
-        mockMvc.perform(post("/api/v1/products")
+        mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isCreated())
@@ -416,7 +419,7 @@ class IndexControllerTests {
     // El DTO de respuesta trae el mensaje y el producto completo anidado
     @Test
     void createReturnsMessageAndNestedProduct() throws Exception {
-        String json = mockMvc.perform(post("/api/v1/products")
+        String json = mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"name": "Mouse", "price": 9990, "quantity": 1}
@@ -458,7 +461,7 @@ class IndexControllerTests {
     }
 
     private String createProductAndGetId(String json) throws Exception {
-        String response = mockMvc.perform(post("/api/v1/products")
+        String response = mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isCreated())
@@ -469,9 +472,53 @@ class IndexControllerTests {
         return JsonPath.read(response, "$.product.id");
     }
 
+    // price es BigDecimal: acepta hasta 10 enteros y 6 decimales sin perder precisión
+    @ParameterizedTest
+    @ValueSource(strings = {"0.5", "29990.123456", "1234567890.123456"})
+    void createKeepsExactPrice(String price) throws Exception {
+        String response = mockMvc.perform(post("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Teclado", "price": %s, "quantity": 3}
+                        """.formatted(price)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // Se compara el texto del JSON: un double redondearía 1234567890.123456
+        assertTrue(response.contains("\"price\":" + price), response);
+    }
+
+    // Más de 10 dígitos enteros o más de 6 decimales: 400 solo con el campo price
+    @ParameterizedTest
+    @ValueSource(strings = {"12345678901", "1.1234567"})
+    void createWithPriceOutOfDigitsIsBadRequest(String price) throws Exception {
+        assertBadRequestOnlyFor("price", mockMvc.perform(post("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Teclado", "price": %s, "quantity": 3}
+                        """.formatted(price))));
+    }
+
+    // OutputCaptureExtension captura lo que se imprime en consola, incluidos los logs
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void createLogsReceivedProduct(CapturedOutput output) throws Exception {
+        mockMvc.perform(post("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Audífonos", "price": 49990.99, "quantity": 4}
+                        """))
+                .andExpect(status().isCreated());
+
+        assertTrue(output.getOut().contains(
+                "Producto recibido: {\"id\":null,\"name\":\"Audífonos\",\"price\":49990.99,\"quantity\":4}"));
+    }
+
     @Test
     void createWithMalformedJsonIsBadRequest() throws Exception {
-        mockMvc.perform(post("/api/v1/products")
+        mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\": \"Teclado\", "))
                 .andExpect(status().isBadRequest());
