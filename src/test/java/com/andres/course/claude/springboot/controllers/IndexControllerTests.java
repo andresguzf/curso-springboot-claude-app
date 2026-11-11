@@ -1,6 +1,8 @@
 package com.andres.course.claude.springboot.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -37,6 +39,9 @@ import com.jayway.jsonpath.JsonPath;
 class IndexControllerTests {
 
     private static final String ISO_DATE = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*";
+
+    // UUID: 8-4-4-4-12 caracteres hexadecimales, por ejemplo 123e4567-e89b-12d3-a456-426614174000
+    private static final String UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
     // Token de prueba: /user-response-entity exige la cabecera Authorization
     private static final String TOKEN = "Bearer abc.def.ghi";
@@ -386,6 +391,90 @@ class IndexControllerTests {
     void handleGetHelloPathWithNonNumericAgeIsBadRequest() throws Exception {
         assertBadRequestOnlyFor("age", mockMvc.perform(get("/api/v1/hello/{name}/{age}", "Andrés", "treinta")))
                 .andExpect(jsonPath("$.errors.age").value("debe ser de tipo Integer"));
+    }
+
+    // POST de un producto con JSON en el cuerpo del request
+
+    @Test
+    void createReturnsCreatedProduct() throws Exception {
+        String json = """
+                {"name": "Teclado", "price": 29990.5, "quantity": 3}
+                """;
+
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value("Producto creado con éxito"))
+                .andExpect(jsonPath("$.product.name").value("Teclado"))
+                .andExpect(jsonPath("$.product.price").value(29990.5))
+                .andExpect(jsonPath("$.product.id", matchesPattern(UUID_PATTERN)))
+                .andExpect(jsonPath("$.product.quantity").value(3));
+    }
+
+    // El DTO de respuesta trae el mensaje y el producto completo anidado
+    @Test
+    void createReturnsMessageAndNestedProduct() throws Exception {
+        String json = mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Mouse", "price": 9990, "quantity": 1}
+                        """))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Map<String, Object> body = JsonPath.read(json, "$");
+        assertEquals(List.of("message", "product"), List.copyOf(body.keySet()));
+        Map<String, Object> product = JsonPath.read(json, "$.product");
+        assertEquals(List.of("id", "name", "price", "quantity"), List.copyOf(product.keySet()));
+    }
+
+    // El id lo genera el servidor como UUID: cada POST recibe uno distinto
+    @Test
+    void createAssignsUniqueUuid() throws Exception {
+        String first = createProductAndGetId("""
+                {"name": "Monitor", "price": 159990, "quantity": 2}
+                """);
+        String second = createProductAndGetId("""
+                {"name": "Parlante", "price": 19990, "quantity": 5}
+                """);
+
+        assertTrue(first.matches(UUID_PATTERN));
+        assertTrue(second.matches(UUID_PATTERN));
+        assertNotEquals(first, second);
+    }
+
+    // Si el cliente envía un id, se ignora y se usa el generado por el servidor
+    @Test
+    void createIgnoresIdSentByClient() throws Exception {
+        String clientId = "123e4567-e89b-12d3-a456-426614174000";
+        String id = createProductAndGetId("""
+                {"id": "%s", "name": "Webcam", "price": 24990, "quantity": 1}
+                """.formatted(clientId));
+
+        assertNotEquals(clientId, id);
+    }
+
+    private String createProductAndGetId(String json) throws Exception {
+        String response = mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return JsonPath.read(response, "$.product.id");
+    }
+
+    @Test
+    void createWithMalformedJsonIsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\": \"Teclado\", "))
+                .andExpect(status().isBadRequest());
     }
 
     // Respuesta de error: status, error y errors, sin la excepción ni la traza
