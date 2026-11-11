@@ -422,7 +422,7 @@ class IndexControllerTests {
         String json = mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"name": "Mouse", "price": 9990, "quantity": 1}
+                        {"name": "Mouse", "price": 9990, "quantity": 2}
                         """))
                 .andReturn()
                 .getResponse()
@@ -454,7 +454,7 @@ class IndexControllerTests {
     void createIgnoresIdSentByClient() throws Exception {
         String clientId = "123e4567-e89b-12d3-a456-426614174000";
         String id = createProductAndGetId("""
-                {"id": "%s", "name": "Webcam", "price": 24990, "quantity": 1}
+                {"id": "%s", "name": "Webcam", "price": 24990, "quantity": 2}
                 """.formatted(clientId));
 
         assertNotEquals(clientId, id);
@@ -474,7 +474,7 @@ class IndexControllerTests {
 
     // price es BigDecimal: acepta hasta 10 enteros y 6 decimales sin perder precisión
     @ParameterizedTest
-    @ValueSource(strings = {"0.5", "29990.123456", "1234567890.123456"})
+    @ValueSource(strings = {"2.000001", "29990.123456", "1234567890.123456"})
     void createKeepsExactPrice(String price) throws Exception {
         String response = mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -492,7 +492,7 @@ class IndexControllerTests {
 
     // Más de 10 dígitos enteros o más de 6 decimales: 400 solo con el campo price
     @ParameterizedTest
-    @ValueSource(strings = {"12345678901", "1.1234567"})
+    @ValueSource(strings = {"12345678901", "3.1234567"})
     void createWithPriceOutOfDigitsIsBadRequest(String price) throws Exception {
         assertBadRequestOnlyFor("price", mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -514,6 +514,43 @@ class IndexControllerTests {
 
         assertTrue(output.getOut().contains(
                 "Producto recibido: {\"id\":null,\"name\":\"Audífonos\",\"price\":49990.99,\"quantity\":4}"));
+    }
+
+    // Valores en el límite que se aceptan: name de 4 y 12 caracteres, price apenas mayor que 2, quantity 2
+    @ParameterizedTest
+    @CsvSource({"Lupa, 2.01, 2", "Destornillad, 2.000001, 2"})
+    void createAcceptsProductInRange(String name, String price, int quantity) throws Exception {
+        mockMvc.perform(post("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "%s", "price": %s, "quantity": %d}
+                        """.formatted(name, price, quantity)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.product.name").value(name))
+                .andExpect(jsonPath("$.product.quantity").value(quantity));
+    }
+
+    // Cada fila envía un producto con un solo campo inválido: el error solo trae ese campo
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', textBlock = """
+            {"price": 10, "quantity": 3}                                  | name
+            {"name": null, "price": 10, "quantity": 3}                    | name
+            {"name": "    ", "price": 10, "quantity": 3}                  | name
+            {"name": "Ana", "price": 10, "quantity": 3}                   | name
+            {"name": "Destornillado", "price": 10, "quantity": 3}         | name
+            {"name": "Teclado", "quantity": 3}                            | price
+            {"name": "Teclado", "price": null, "quantity": 3}             | price
+            {"name": "Teclado", "price": 2, "quantity": 3}                | price
+            {"name": "Teclado", "price": 1.5, "quantity": 3}              | price
+            {"name": "Teclado", "price": 10}                              | quantity
+            {"name": "Teclado", "price": 10, "quantity": null}            | quantity
+            {"name": "Teclado", "price": 10, "quantity": 1}               | quantity
+            {"name": "Teclado", "price": 10, "quantity": 0}               | quantity
+            """)
+    void createWithInvalidProductIsBadRequest(String json, String field) throws Exception {
+        assertBadRequestOnlyFor(field, mockMvc.perform(post("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)));
     }
 
     @Test
