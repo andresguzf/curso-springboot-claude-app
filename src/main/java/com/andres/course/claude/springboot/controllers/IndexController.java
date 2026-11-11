@@ -76,7 +76,7 @@ public class IndexController {
         return new MessageDto(
                 "¡Hola Mundo desde Spring Boot! con los datos de un usuario.",
                 LocalDateTime.now(),
-                new UserDto("Andrés", "Guzmán", "andres.guzman@example.com", 30));
+                new UserDto("Andrés", "Guzmán", "andres.guzman@example.com", 30, "12.345.678-5"));
     }
 
     @GetMapping("/user-response-entity")
@@ -86,7 +86,7 @@ public class IndexController {
         MessageHeadersDto body = new MessageHeadersDto(
                 "¡Hola Mundo desde Spring Boot! con los datos de un usuario.",
                 LocalDateTime.now(),
-                new UserDto("Andrés", "Guzmán", "andres.guzman@example.com", 30),
+                new UserDto("Andrés", "Guzmán", "andres.guzman@example.com", 30, "12.345.678-5"),
                 username,
                 authorization);
 

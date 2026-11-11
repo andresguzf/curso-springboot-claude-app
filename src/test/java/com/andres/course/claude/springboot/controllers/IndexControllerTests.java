@@ -568,7 +568,7 @@ class IndexControllerTests {
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"name": "María", "lastname": "González", "email": "maria.gonzalez@ejemplo.com", "age": 28}
+                        {"name": "María", "lastname": "González", "email": "maria.gonzalez@ejemplo.com", "age": 28, "rut": "12.345.678-5"}
                         """))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -577,7 +577,8 @@ class IndexControllerTests {
                 .andExpect(jsonPath("$.user.name").value("María"))
                 .andExpect(jsonPath("$.user.lastname").value("González"))
                 .andExpect(jsonPath("$.user.email").value("maria.gonzalez@ejemplo.com"))
-                .andExpect(jsonPath("$.user.age").value(28));
+                .andExpect(jsonPath("$.user.age").value(28))
+                .andExpect(jsonPath("$.user.rut").value("12.345.678-5"));
     }
 
     // Valores en el límite que se aceptan: name y lastname de 3 y 20 caracteres
@@ -587,7 +588,7 @@ class IndexControllerTests {
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"name": "%s", "lastname": "%s", "email": "test@ejemplo.com", "age": 30}
+                        {"name": "%s", "lastname": "%s", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"}
                         """.formatted(name, lastname)))
                 .andExpect(status().isCreated());
     }
@@ -595,23 +596,29 @@ class IndexControllerTests {
     // Cada fila envía un usuario con un solo campo inválido: el error solo trae ese campo
     @ParameterizedTest
     @CsvSource(delimiter = '|', textBlock = """
-            {"lastname": "Pérez", "email": "test@ejemplo.com", "age": 30}                              | name
-            {"name": "   ", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30}               | name
-            {"name": "Al", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30}                | name
-            {"name": "Maximiliano Andrés Jo", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30} | name
-            {"name": "Juan", "email": "test@ejemplo.com", "age": 30}                                    | lastname
-            {"name": "Juan", "lastname": "", "email": "test@ejemplo.com", "age": 30}                    | lastname
-            {"name": "Juan", "lastname": "Li", "email": "test@ejemplo.com", "age": 30}                  | lastname
-            {"name": "Juan", "lastname": "Fernández de la Rivas", "email": "test@ejemplo.com", "age": 30} | lastname
-            {"name": "Juan", "lastname": "Pérez", "age": 30}                                            | email
-            {"name": "Juan", "lastname": "Pérez", "email": "", "age": 30}                               | email
-            {"name": "Juan", "lastname": "Pérez", "email": "juan.perez", "age": 30}                     | email
-            {"name": "Juan", "lastname": "Pérez", "email": "juan@@ejemplo.com", "age": 30}              | email
-            {"name": "Juan", "lastname": "Pérez", "email": "@ejemplo.com", "age": 30}                   | email
-            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com"}                          | age
-            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": null}             | age
-            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 0}                | age
-            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 111}              | age
+            {"lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"}                              | name
+            {"name": "   ", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"}               | name
+            {"name": "Al", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"}                | name
+            {"name": "Maximiliano Andrés Jo", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"} | name
+            {"name": "Juan", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"}                                    | lastname
+            {"name": "Juan", "lastname": "", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"}                    | lastname
+            {"name": "Juan", "lastname": "Li", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"}                  | lastname
+            {"name": "Juan", "lastname": "Fernández de la Rivas", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-5"} | lastname
+            {"name": "Juan", "lastname": "Pérez", "age": 30, "rut": "12.345.678-5"}                                            | email
+            {"name": "Juan", "lastname": "Pérez", "email": "", "age": 30, "rut": "12.345.678-5"}                               | email
+            {"name": "Juan", "lastname": "Pérez", "email": "juan.perez", "age": 30, "rut": "12.345.678-5"}                     | email
+            {"name": "Juan", "lastname": "Pérez", "email": "juan@@ejemplo.com", "age": 30, "rut": "12.345.678-5"}              | email
+            {"name": "Juan", "lastname": "Pérez", "email": "@ejemplo.com", "age": 30, "rut": "12.345.678-5"}                   | email
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "rut": "12.345.678-5"}                          | age
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": null, "rut": "12.345.678-5"}             | age
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 0, "rut": "12.345.678-5"}                | age
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 111, "rut": "12.345.678-5"}              | age
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30}                                       | rut
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": ""}                            | rut
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678-9"}                | rut
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "12.345.678"}                  | rut
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "12-345-678-5"}                | rut
+            {"name": "Juan", "lastname": "Pérez", "email": "test@ejemplo.com", "age": 30, "rut": "abc"}                         | rut
             """)
     void createUserWithInvalidDataIsBadRequest(String json, String field) throws Exception {
         assertBadRequestOnlyFor(field, mockMvc.perform(post("/api/users")
@@ -626,11 +633,12 @@ class IndexControllerTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.*", hasSize(4)))
+                .andExpect(jsonPath("$.errors.*", hasSize(5)))
                 .andExpect(jsonPath("$.errors.name").isNotEmpty())
                 .andExpect(jsonPath("$.errors.lastname").isNotEmpty())
                 .andExpect(jsonPath("$.errors.email").isNotEmpty())
                 .andExpect(jsonPath("$.errors.age").isNotEmpty())
+                .andExpect(jsonPath("$.errors.rut").isNotEmpty())
                 .andExpect(jsonPath("$.trace").doesNotExist());
     }
 
@@ -641,10 +649,34 @@ class IndexControllerTests {
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                        {"name": "Juan", "lastname": "Pérez", "email": "juan.perez@ejemplo.com", "age": %d}
+                        {"name": "Juan", "lastname": "Pérez", "email": "juan.perez@ejemplo.com", "age": %d, "rut": "12.345.678-5"}
                         """.formatted(age)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.user.age").value(age));
+    }
+
+    // RUT válidos en distintos formatos: con puntos, sin puntos, sin guion, de 7 dígitos y con K
+    @ParameterizedTest
+    @ValueSource(strings = {"12.345.678-5", "12345678-5", "123456785", "9.876.543-3", "10.000.013-K", "10.000.013-k"})
+    void createUserAcceptsValidRut(String rut) throws Exception {
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Juan", "lastname": "Pérez", "email": "juan.perez@ejemplo.com", "age": 30, "rut": "%s"}
+                        """.formatted(rut)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.rut").value(rut));
+    }
+
+    @Test
+    void createUserWithInvalidRutShowsCustomMessage() throws Exception {
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"name": "Juan", "lastname": "Pérez", "email": "juan.perez@ejemplo.com", "age": 30, "rut": "12.345.678-9"}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.rut").value("no es un RUT chileno válido"));
     }
 
     @Test
